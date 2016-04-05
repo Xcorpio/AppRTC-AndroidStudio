@@ -24,10 +24,8 @@ public class LooperExecutor extends Thread implements Executor {
   // Object used to signal that looper thread has started and Handler instance
   // associated with looper thread has been allocated.
   private final Object looperStartedEvent = new Object();
-  private Handler handler = null;
   private boolean running = false;
   private long threadId;
-
   @Override
   public void run() {
     Looper.prepare();
@@ -91,5 +89,7 @@ public class LooperExecutor extends Thread implements Executor {
       handler.post(runnable);
     }
   }
+
+  private Handler handler = null;
 
 }
