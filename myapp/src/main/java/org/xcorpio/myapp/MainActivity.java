@@ -8,6 +8,7 @@ import android.util.Log;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import org.json.JSONObject;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraEnumerationAndroid;
@@ -25,17 +26,19 @@ import org.webrtc.VideoTrack;
 
 import java.net.URI;
 
-public class MainActivity extends AppCompatActivity implements RoomClient.RoomClientEventListener {
+public class MainActivity extends AppCompatActivity {
 
     private String roomURI;
     private TextView textView;
     private EditText editText;
     private SurfaceViewRenderer localRender;
+    private SurfaceViewRenderer remoteRender;
 
     private EglBase rootEglBase;
     private PeerConnectionFactory factory;
 
     private RoomClient roomClient;
+    MediaStream localMediaStream;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements RoomClient.RoomCl
         rootEglBase = EglBase.create();
         localRender.init(rootEglBase.getEglBaseContext(), null);
         localRender.setZOrderMediaOverlay(true);
-
+        remoteRender.init(rootEglBase.getEglBaseContext(), null);
 
         // create PeerConnectionFactory
         boolean initializeAudio = true;
@@ -89,15 +92,15 @@ public class MainActivity extends AppCompatActivity implements RoomClient.RoomCl
         localVideoTrack.addRenderer(new VideoRenderer(localRender));
 
         // MediaStream
-        MediaStream mediaStream = factory.createLocalMediaStream("LOCAL_MEDIA_STREAM_ID");
-        mediaStream.addTrack(localAudioTrack);
-        mediaStream.addTrack(localVideoTrack);
+        localMediaStream = factory.createLocalMediaStream("LOCAL_MEDIA_STREAM_ID");
+        localMediaStream.addTrack(localAudioTrack);
+        localMediaStream.addTrack(localVideoTrack);
 
+        // connect signaling server
         roomURI = editText.getText().toString();
         SignalingEventListenerImpl signalingEventListener = new SignalingEventListenerImpl();
-        roomClient = new RoomClient(URI.create(roomURI), signalingEventListener, this);
+        roomClient = new RoomClient(URI.create(roomURI), signalingEventListener, factory, localMediaStream);
         signalingEventListener.setClient(roomClient);
-        signalingEventListener.setRoomClientEventListener(this);
         roomClient.connect();
     }
 
@@ -105,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements RoomClient.RoomCl
         textView = (TextView) findViewById(R.id.textView);
         editText = (EditText) findViewById(R.id.editText);
         localRender = (SurfaceViewRenderer) findViewById(R.id.local_video_view);
+        remoteRender = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
 
         editText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -122,15 +126,5 @@ public class MainActivity extends AppCompatActivity implements RoomClient.RoomCl
 
             }
         });
-    }
-
-    @Override
-    public void onConnected() {
-
-    }
-
-    @Override
-    public void onIceCandidate(IceCandidate candidate) {
-
     }
 }
