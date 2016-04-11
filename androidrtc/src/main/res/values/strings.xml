@@ -1,0 +1,5 @@
+<resources>
+    <string name="host">192.168.3.4</string>
+    <string name="port">3000</string>
+    <string name="app_name">Androidrtc</string>
+</resources>
